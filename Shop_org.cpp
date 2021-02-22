@@ -19,7 +19,7 @@ string Shop_org::int2string(int i)
 
 void Shop_org::print(int person, string message)
 {
-   cout << ((person != barber) ? "customer[" : "barber  [" ) << person << "]: " << message << endl;
+   cout << ((person > 0) ? "customer[" + int2string(person) : "barber  [" + int2string(person * -1)) << "]: " << message << endl;
 }
 
 int Shop_org::get_cust_drops() const
@@ -93,8 +93,8 @@ void Shop_org::leaveShop(int id, int barber_id)
    // Pay the barber and signal barber appropriately
    money_paid_ = true;
    pthread_cond_signal(&cond_barber_paid_);
-   print( id, "says good-bye to");// need to print barber_id vvvv
-   print(barber_id, ".");
+   print( id, "says good-bye to barber[" + int2string(barber_id) + "]");// need to print barber_id vvvv
+  
    pthread_mutex_unlock(&mutex_);
 }
 
@@ -110,7 +110,7 @@ void Shop_org::helloCustomer(int id)
    }   */
    if (waiting_chairs_.empty() && customer_in_chair_ == 0 ) //if (waiting_chairs_.empty() && barber_chairs[id] == 0)
    {
-      print(barber, "sleeps because of no customers.");
+      print(id, "sleeps because of no customers.");
       pthread_cond_wait(&cond_barber_sleeping_, &mutex_);
    }
    
@@ -123,7 +123,7 @@ void Shop_org::helloCustomer(int id)
        pthread_cond_wait(&cond_barber_sleeping_, &mutex_);
    }
 
-   print(barber, "starts a hair-cut service for " + int2string( customer_in_chair_ ) );
+   print(barber, "starts a hair-cut service for customer[" + int2string( customer_in_chair_ ) + "]" );
    pthread_mutex_unlock( &mutex_ );
 }
 
@@ -133,7 +133,7 @@ void Shop_org::byeCustomer(int barber_id)
 
   // Hair Cut-Service is done so signal customer and wait for payment
   in_service_ = false;
-  print(barber_id, "says he's done with a hair-cut service for " + int2string(customer_in_chair_));
+  print(barber_id, "says he's done with a hair-cut service for customer[" + int2string(customer_in_chair_) + "]");
   //print(barber, "says he's done with a hair-cut service for " + int2string(customer_in_chair_));
   
   money_paid_ = false;
@@ -144,7 +144,8 @@ void Shop_org::byeCustomer(int barber_id)
   }
 
   //Signal to customer to get next one
-  customer_in_chair_ = 0;
+  barber_chairs[barber_id] = 0;
+  //customer_in_chair_ = 0;
   print(barber, "calls in another customer");
   pthread_cond_signal( &cond_customers_waiting_ );
 
